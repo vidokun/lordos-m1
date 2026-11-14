@@ -106,12 +106,6 @@ Ia akan menampilkan daftar centang. Baca bagian **Hasil** di bawah:
 ## Langkah 4 — Pasang LordOS
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/vidokun/lordos-m1/main/setup.sh | sudo sh
-```
-
-Atau, kalau ingin melihat isinya dulu (disarankan):
-
-```sh
 curl -fsSL -o setup.sh https://raw.githubusercontent.com/vidokun/lordos-m1/main/setup.sh
 less setup.sh          # baca dulu
 sudo sh setup.sh
@@ -121,6 +115,39 @@ Skrip ini akan:
 1. Memeriksa mesin Anda Apple Silicon dan kernelnya benar
 2. Memasang `asahi-platform` (pelindung speaker — **wajib**)
 3. Memasang LordOS
+
+Di Debian **Forky**, `setup.sh` memakai `fix-forky.sh`: paket LordOS menuntut
+FFmpeg 7, Forky hanya punya FFmpeg 8, jadi paket di-repack agar bisa dipasang.
+Di Debian **trixie**, ia memakai `install.sh` biasa.
+
+### Opsional — aktifkan video, kamera, mikrofon
+
+Di Forky, `lord-media` (satu-satunya biner yang memuat FFmpeg) tidak bisa dipasang
+dengan cara biasa. Untuk mengaktifkannya:
+
+```sh
+sudo sh setup.sh --with-media
+```
+
+Ini mengambil FFmpeg 7 dari Trixie. **Ini mencampur dua rilis Debian** — baca
+peringatannya di [`MEDIA.md`](MEDIA.md) sebelum memilih. Lewati langkah ini kalau
+Anda tidak butuh pemutaran video, kamera, atau mikrofon: desktop, browser, file
+manager dan audio biasa tetap jalan tanpa itu.
+
+---
+
+## Langkah 4b — Kalau ikon kosong
+
+Sebagian ikon LordOS bukan gambar, melainkan **glyph teks** dari font sistem —
+misalnya Bluetooth (`ᛒ`), Printers (`⎙`) dan Clipboard (`⎘`). Ketiganya hanya ada
+di `fonts-noto-core`. Tanpa font itu, yang muncul adalah kotak kosong.
+
+```sh
+sh check-icons.sh              # periksa; hanya membaca
+sudo sh check-icons.sh --install   # pasang font yang kurang
+```
+
+Logout lalu login setelah memasang font supaya sesi memuatnya.
 
 ---
 
@@ -219,7 +246,13 @@ diskutil eraseVolume free free disk0sN
 | `check.sh` | Pemeriksa kesiapan. Hanya membaca. |
 | `setup.sh` | Pemasang satu-perintah (paket Asahi + LordOS). |
 | `install.sh` | Installer LordOS yang sudah dipatch (forky/sid). |
-| `test.sh` | Test untuk `check.sh`. |
+| `fix-forky.sh` | Jalur Forky: repack paket tanpa FFmpeg 7, lalu pasang. |
+| `finish-setup.sh` | Bagian sistem yang `fix-forky.sh` lewati (service, greeter, grup). |
+| `doctor.sh` | Pemeriksa menyeluruh setelah terpasang. Hanya membaca. |
+| `check-icons.sh` | Cari tahu ikon mana yang kosong dan font apa yang kurang. |
+| `fix-icons.sh` | Pasang tema ikon GTK/Qt (Adwaita, hicolor). |
+| `test.sh` | Test untuk `check.sh` dan router `setup.sh`. |
+| `MEDIA.md` | Cara mengaktifkan video, kamera, mikrofon di Forky. |
 | `installer_data_trixie.json` | Untuk yang ingin Debian 13 (Trixie). Lihat di bawah. |
 
 ---

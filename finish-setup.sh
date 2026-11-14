@@ -167,6 +167,32 @@ done
 
 hdr "PipeWire untuk user"
 
+# install.sh memasang paket ini di install_package(); jalur Forky melewati fungsi
+# itu (paket LordOS dipasang langsung oleh fix-forky.sh), jadi tanpa langkah ini
+# tidak ada pipewire/wireplumber maupun font yang digambar LordOS sendiri.
+# Daftar ini HARUS sama dengan EXTRA_PKGS di install.sh:37 — sengaja disalin,
+# bukan dirujuk, karena skrip ini juga berjalan sendiri dari curl | sh.
+EXTRA_PKGS="sudo dbus-user-session pipewire pipewire-pulse pipewire-alsa wireplumber rtkit alsa-ucm-conf
+ fonts-noto-core fonts-noto-color-emoji fonts-dejavu-core libthai-data shared-mime-info"
+
+miss=""
+for p in $EXTRA_PKGS; do
+    dpkg -s "$p" >/dev/null 2>&1 || miss="$miss $p"
+done
+
+if [ -z "$miss" ]; then
+    ok "paket sesi, audio dan font sudah terpasang"
+else
+    say "  Memasang paket yang kurang:$miss"
+    # shellcheck disable=SC2086 # $miss adalah daftar nama paket
+    if DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends $miss; then
+        ok "terpasang"
+    else
+        warn "sebagian gagal dipasang — coba: sudo apt update && sudo apt install$miss"
+        say "      Tanpa ini: audio bisa tidak jalan, dan beberapa ikon tampil kosong."
+    fi
+fi
+
 systemctl --global enable pipewire.socket pipewire-pulse.socket wireplumber.service >/dev/null 2>&1 \
     && ok "unit PipeWire global di-enable" || warn "gagal enable unit PipeWire global"
 

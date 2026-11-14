@@ -122,5 +122,28 @@ if [ "$rc" -eq 0 ]; then
     echo "  (catatan: check.sh keluar 0 — hanya benar bila dijalankan di Apple Silicon yang siap)"
 fi
 
+# --- case 7: setup.sh harus merutekan forky lewat fix-forky.sh --------------
+# install.sh tidak bisa memasang LordOS di forky (butuh FFmpeg 7, forky punya 8),
+# jadi setup.sh wajib memilih jalur lain. Lihat test-setup-router.sh.
+DIR=$(dirname -- "$0")
+t_ok
+if [ -f "$DIR/test-setup-router.sh" ]; then
+    if ! sh "$DIR/test-setup-router.sh" "$DIR/setup.sh" >/dev/null 2>&1; then
+        t_fail "kasus 7: router setup.sh salah (argumen atau forky/trixie)"
+    fi
+else
+    t_fail "kasus 7: test-setup-router.sh tidak ditemukan"
+fi
+
+# --- case 8: jalur forky benar-benar memanggil skrip yang tepat ------------
+t_ok
+if [ -f "$DIR/test-setup-forky.sh" ]; then
+    if ! sh "$DIR/test-setup-forky.sh" "$DIR/setup.sh" >/dev/null 2>&1; then
+        t_fail "kasus 8: jalur forky tidak memanggil fix-forky.sh/finish-setup.sh"
+    fi
+else
+    t_fail "kasus 8: test-setup-forky.sh tidak ditemukan"
+fi
+
 printf '\n%d pemeriksaan, %d gagal\n' "$CHECKS" "$FAILS"
 [ "$FAILS" -eq 0 ]

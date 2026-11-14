@@ -112,7 +112,37 @@ for pkg in "$hwdeb" "lordos-rclone_1.75.2-1_arm64.deb"; do
     fi
 done
 
-# ---------------------------------------------------------------- 3. repack
+# ---------------------------------------------------------------- 3. dependensi
+
+# Sebelum repack, bukan sesudah: keputusan membuang lord-media bergantung pada
+# apakah FFmpeg 7 benar-benar terpasang. Sebelumnya FFmpeg 7 dipasang SETELAH
+# repack, jadi kalau pemasangan itu gagal, paket tetap menuntut FFmpeg 7 dan
+# seluruh transaksi apt dibatalkan — persis kegagalan yang skrip ini hindari.
+hdr "Memasang dependensi"
+
+apt-get update -q || die "apt-get update gagal"
+apt-get install -y -q --no-install-recommends asahi-platform \
+    || warn "asahi-platform gagal — speaker belum terlindungi"
+
+if [ "$WITH_MEDIA" -eq 1 ]; then
+    say "  Menambahkan FFmpeg 7 dari Trixie..."
+    echo "deb http://deb.debian.org/debian trixie main" > /etc/apt/sources.list.d/trixie-ffmpeg.list
+    cat > /etc/apt/preferences.d/trixie-ffmpeg.pref <<'EOF'
+Package: libavcodec61 libavformat61 libavutil59 libswscale8 libswresample5 libavcodec-extra61
+Pin: release n=trixie
+Pin-Priority: 1001
+EOF
+    apt-get update -q || true
+    if apt-get install -y -q libavcodec61 libavformat61 libavutil59 libswscale8 libswresample5; then
+        ok "FFmpeg 7 terpasang dari Trixie"
+    else
+        # tanpa FFmpeg 7, paket dengan dependensi FFmpeg akan ditolak apt seluruhnya
+        WITH_MEDIA=0
+        warn "FFmpeg 7 gagal dipasang — melanjutkan TANPA fitur media"
+    fi
+fi
+
+# ---------------------------------------------------------------- 4. repack
 
 hdr "Menyesuaikan paket untuk Forky"
 
@@ -122,26 +152,34 @@ mkdir -p ctl data
 tar xf control.tar.* -C ctl || die "gagal membuka control.tar"
 tar xf data.tar.*  -C data  || die "gagal membuka data.tar"
 
-# buang binary yang memuat FFmpeg 7
-if [ -f data/usr/lib/lordos/bin/lord-media ]; then
-    rm -f data/usr/lib/lordos/bin/lord-media
-    ok "lord-media dilewati (satu-satunya binary yang butuh FFmpeg 7)"
-fi
+# Dengan --with-media binary dan dependensi FFmpeg 7 DIPERTAHANKAN: FFmpeg 7
+# dipasang dari Trixie sebelum paket LordOS (lihat bagian 3), jadi apt bisa
+# memenuhinya. Tanpa flag ini keduanya dibuang supaya paket bisa dipasang di
+# Forky yang hanya punya FFmpeg 8.
+if [ "$WITH_MEDIA" -eq 0 ]; then
+    # buang binary yang memuat FFmpeg 7
+    if [ -f data/usr/lib/lordos/bin/lord-media ]; then
+        rm -f data/usr/lib/lordos/bin/lord-media
+        ok "lord-media dilewati (satu-satunya binary yang butuh FFmpeg 7)"
+    fi
 
-# buang dependensi FFmpeg 7 dari metadata
-before=$(grep -c 'libavcodec61' ctl/control || true)
-sed -i -E '
-    s/, *libavcodec61[^,]*//g;
-    s/, *libavformat61[^,]*//g;
-    s/, *libavutil59[^,]*//g;
-    s/, *libswscale8[^,]*//g;
-    s/, *libswresample5[^,]*//g;
-    s/^Depends: *, */Depends: /
-' ctl/control
-if grep -q -E 'libavcodec|libavformat|libavutil|libswscale|libswresample' ctl/control; then
-    die "masih ada dependensi FFmpeg setelah disaring — kirim output ini ke maintainer"
+    # buang dependensi FFmpeg 7 dari metadata
+    before=$(grep -c 'libavcodec61' ctl/control || true)
+    sed -i -E '
+        s/, *libavcodec61[^,]*//g;
+        s/, *libavformat61[^,]*//g;
+        s/, *libavutil59[^,]*//g;
+        s/, *libswscale8[^,]*//g;
+        s/, *libswresample5[^,]*//g;
+        s/^Depends: *, */Depends: /
+    ' ctl/control
+    if grep -q -E 'libavcodec|libavformat|libavutil|libswscale|libswresample' ctl/control; then
+        die "masih ada dependensi FFmpeg setelah disaring — kirim output ini ke maintainer"
+    fi
+    ok "dependensi FFmpeg 7 dihapus dari metadata (sebelumnya $before baris)"
+else
+    ok "lord-media dan dependensi FFmpeg 7 dipertahankan (--with-media)"
 fi
-ok "dependensi FFmpeg 7 dihapus dari metadata (sebelumnya $before baris)"
 
 # pastikan Depends masih waras
 grep -q '^Depends: .' ctl/control || die "Depends jadi kosong setelah disaring"
@@ -167,29 +205,7 @@ else
 fi
 ok "paket repack selesai"
 
-# ---------------------------------------------------------------- 4. pasang
-
-hdr "Memasang dependensi"
-
-apt-get update -q || die "apt-get update gagal"
-apt-get install -y -q --no-install-recommends asahi-platform \
-    || warn "asahi-platform gagal — speaker belum terlindungi"
-
-if [ "$WITH_MEDIA" -eq 1 ]; then
-    say "  Menambahkan FFmpeg 7 dari Trixie..."
-    echo "deb http://deb.debian.org/debian trixie main" > /etc/apt/sources.list.d/trixie-ffmpeg.list
-    cat > /etc/apt/preferences.d/trixie-ffmpeg.pref <<'EOF'
-Package: libavcodec61 libavformat61 libavutil59 libswscale8 libswresample5 libavcodec-extra61
-Pin: release n=trixie
-Pin-Priority: 1001
-EOF
-    apt-get update -q || true
-    if apt-get install -y -q libavcodec61 libavformat61 libavutil59 libswscale8 libswresample5; then
-        ok "FFmpeg 7 terpasang dari Trixie"
-    else
-        warn "FFmpeg 7 gagal dipasang — melanjutkan tanpa fitur media"
-    fi
-fi
+# ---------------------------------------------------------------- 5. pasang
 
 hdr "Memasang LordOS"
 
@@ -204,7 +220,7 @@ fi
 
 ok "LordOS terpasang"
 
-# ---------------------------------------------------------------- 5. hasil
+# ---------------------------------------------------------------- 6. hasil
 
 hdr "Selesai"
 

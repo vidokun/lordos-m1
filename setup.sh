@@ -46,6 +46,26 @@ need_root() {
     exec sudo -E sh "$self" "$@"
 }
 
+# --with-media adalah flag kita sendiri: install.sh tidak mengenalnya dan akan
+# menolaknya sebagai "unknown option". Jadi disaring di sini, lalu diteruskan ke
+# fix-forky.sh (jalur Forky), bukan ke install.sh.
+WITH_MEDIA=0
+PASS_ARGS=""
+to_clean=""
+for a in "$@"; do
+    case "$a" in
+        --with-media) WITH_MEDIA=1 ;;
+        -h|--help)
+            sed -n '2,20p' "$0"
+            say ""
+            say "Pilihan:"
+            say "  --with-media   aktifkan video/kamera/mikrofon (memakai FFmpeg 7 dari Trixie)"
+            say "  --yes           jangan bertanya"
+            exit 0 ;;
+        *) PASS_ARGS="$PASS_ARGS $a" ;;
+    esac
+done
+
 need_root "$@"
 
 # ---------------------------------------------------------------- 1. pemeriksaan
@@ -112,6 +132,57 @@ fi
 
 hdr "LordOS"
 
+# Debian Forky (dan sid) TIDAK bisa memakai install.sh: paket LordOS menuntut
+# FFmpeg 7 (libavcodec61, ...), dan Forky hanya punya FFmpeg 8 (libavcodec63).
+# apt lalu membatalkan SELURUH transaksi, jadi install.sh berhenti dengan
+# "apt-get could not install LordOS". fix-forky.sh menangani persis itu: ia
+# me-repack paket tanpa dependensi FFmpeg 7, memasangnya, lalu finish-setup.sh
+# menyelesaikan bagian sistem. Di trixie, install.sh tetap jalur yang benar.
+#
+# Dibaca dengan sed, bukan `. /etc/os-release`: file itu dieksekusi kalau di-source,
+# dan OS_RELEASE membuat keputusan ini bisa diuji tanpa Debian.
+codename=$(sed -n 's/^VERSION_CODENAME=//p' "${OS_RELEASE:-/etc/os-release}" 2>/dev/null \
+           | head -n 1 | sed 's/^"//; s/"$//')
+NEED_FORKY_PATH=0
+case "$codename" in
+    forky|sid) NEED_FORKY_PATH=1 ;;
+esac
+
+if [ "$NEED_FORKY_PATH" -eq 1 ]; then
+    say "  Debian ${codename}: memakai jalur Forky (paket di-repack, FFmpeg 7 dibuang)"
+    say ""
+    for s in fix-forky.sh finish-setup.sh; do
+        if [ -n "$DIR" ] && [ -f "$DIR/$s" ]; then
+            f="$DIR/$s"
+        else
+            f=$(mktemp) || die "tidak bisa membuat file sementara"
+            if ! curl -fsSL -o "$f" "$RAW/$s"; then
+                rm -f "$f"
+                die "gagal mengunduh $s — periksa jaringan"
+            fi
+            to_clean="$to_clean $f"
+        fi
+        if [ "$s" = fix-forky.sh ] && [ "$WITH_MEDIA" -eq 1 ]; then
+            sh "$f" --with-media
+        else
+            sh "$f"
+        fi
+        rc=$?
+        [ "$rc" -eq 0 ] || break
+    done
+    for f in ${to_clean:-}; do rm -f "$f"; done
+    printf '\n'
+    if [ "$rc" -eq 0 ]; then
+        printf '%s%sSelesai.%s Reboot untuk masuk ke LordOS:\n\n' "$GRN" "$BLD" "$OFF"
+        printf '    sudo reboot\n\n'
+    else
+        printf '%s%sPemasangan berhenti dengan kode %s.%s\n\n' "$RED" "$BLD" "$rc" "$OFF"
+        printf 'Debian Anda tetap utuh. Tidak ada yang rusak.\n'
+        printf 'Salin pesan error di atas untuk analisis.\n\n'
+    fi
+    exit "$rc"
+fi
+
 INST=""
 if [ -n "$DIR" ] && [ -f "$DIR/install.sh" ]; then
     INST="$DIR/install.sh"
@@ -130,10 +201,18 @@ if [ -z "$INST" ]; then
 fi
 
 say "  Menjalankan installer LordOS"
-say "  (installer ini sudah dipatch agar menerima Debian forky/sid)"
+say "  (installer ini sudah dipatch agar menerima Debian trixie)"
 say ""
 
-sh "$INST" "$@"
+# --with-media hanya berarti di jalur Forky: di trixie paket LordOS memakai
+# FFmpeg 7 yang memang ada di sana, jadi tidak ada yang perlu diaktifkan.
+# install.sh tidak mengenal flag ini, jadi jangan diteruskan (ia akan menolaknya).
+if [ "$WITH_MEDIA" -eq 1 ]; then
+    warn "--with-media diabaikan: di trixie fitur media aktif tanpa flag ini"
+fi
+
+# shellcheck disable=SC2086 # $PASS_ARGS adalah daftar argumen; --with-media sudah disaring
+sh "$INST" $PASS_ARGS
 rc=$?
 
 [ "${tmp:-}" != "" ] && rm -f "$tmp"
