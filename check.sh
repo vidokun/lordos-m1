@@ -170,12 +170,23 @@ fi
 
 hdr "7. Jaringan dan ruang"
 
-if ping -c1 -W2 deb.debian.org >/dev/null 2>&1; then
-    pass "Jaringan ke deb.debian.org OK"
-elif getent hosts deb.debian.org >/dev/null 2>&1; then
-    warn "DNS OK tapi ping gagal (mungkin diblokir — coba: sudo apt update)"
+dns_ok=0
+if command -v getent >/dev/null 2>&1; then
+    getent hosts deb.debian.org >/dev/null 2>&1 && dns_ok=1
+elif command -v host >/dev/null 2>&1; then
+    host deb.debian.org >/dev/null 2>&1 && dns_ok=1
+elif command -v nslookup >/dev/null 2>&1; then
+    nslookup deb.debian.org >/dev/null 2>&1 && dns_ok=1
+fi
+
+if [ "$dns_ok" -eq 1 ]; then
+    if ping -c1 -W2 deb.debian.org >/dev/null 2>&1; then
+        pass "Jaringan ke deb.debian.org OK (DNS + ping)"
+    else
+        warn "DNS OK, ping diblokir (normal di sebagian jaringan) — coba: sudo apt update"
+    fi
 else
-    bad "Tidak ada jaringan — sambungkan dulu (nmtui)"
+    bad "Tidak bisa resolve deb.debian.org — tidak ada jaringan (sambungkan: nmtui)"
 fi
 
 free_mb=$(df -Pk /var 2>/dev/null | awk 'NR==2 {print int($4/1024)}')
