@@ -145,5 +145,15 @@ else
     t_fail "kasus 8: test-setup-forky.sh tidak ditemukan"
 fi
 
+# --- case 9: enable-media.sh memutuskan hal yang benar ----------------------
+t_ok
+if [ -f "$DIR/test-enable-media.sh" ]; then
+    if ! sh "$DIR/test-enable-media.sh" "$DIR/enable-media.sh" >/dev/null 2>&1; then
+        t_fail "kasus 9: enable-media.sh salah memutuskan (forky/trixie/aktif)"
+    fi
+else
+    t_fail "kasus 9: test-enable-media.sh tidak ditemukan"
+fi
+
 printf '\n%d pemeriksaan, %d gagal\n' "$CHECKS" "$FAILS"
 [ "$FAILS" -eq 0 ]

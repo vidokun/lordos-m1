@@ -46,23 +46,34 @@ need_root() {
     exec sudo -E sh "$self" "$@"
 }
 
-# --with-media adalah flag kita sendiri: install.sh tidak mengenalnya dan akan
-# menolaknya sebagai "unknown option". Jadi disaring di sini, lalu diteruskan ke
-# fix-forky.sh (jalur Forky), bukan ke install.sh.
-WITH_MEDIA=0
+# --with-media sengaja TIDAK ditangani di sini. Dulu flag ini diteruskan ke
+# fix-forky.sh, yang artinya mengunduh ulang paket LordOS 31 MB hanya untuk
+# memasang FFmpeg 7. enable-media.sh melakukan bagian media saja, pada sistem
+# yang sudah terpasang, tanpa unduhan itu — jadi hanya ada satu jalur, dan yang
+# lebih ringan.
 PASS_ARGS=""
 to_clean=""
 for a in "$@"; do
     case "$a" in
-        --with-media) WITH_MEDIA=1 ;;
+        --with-media)
+            say "  --with-media sudah tidak dipakai setup.sh."
+            say "  Untuk fitur media sesudah LordOS terpasang:"
+            say ""
+            say "      curl -fsSL -o enable-media.sh https://raw.githubusercontent.com/vidokun/lordos-m1/main/enable-media.sh"
+            say "      sudo sh enable-media.sh --apply"
+            say ""
+            say "  Pemasangan LordOS di atas tetap dilanjutkan tanpa media."
+            say ""
+            ;;
         -h|--help)
             # Di-pipe (curl | sh), $0 adalah "sh" — bukan berkas yang bisa dibaca,
             # jadi sed akan mencetak error. Bantuan tetap ditampilkan tanpa header.
             [ -f "$0" ] && sed -n '2,20p' "$0"
             say ""
             say "Pilihan:"
-            say "  --with-media   aktifkan video/kamera/mikrofon (memakai FFmpeg 7 dari Trixie)"
-            say "  --yes           jangan bertanya"
+            say "  --yes   jangan bertanya"
+            say ""
+            say "Fitur media punya skripnya sendiri: enable-media.sh"
             exit 0 ;;
         *) PASS_ARGS="$PASS_ARGS $a" ;;
     esac
@@ -164,11 +175,8 @@ if [ "$NEED_FORKY_PATH" -eq 1 ]; then
             fi
             to_clean="$to_clean $f"
         fi
-        if [ "$s" = fix-forky.sh ] && [ "$WITH_MEDIA" -eq 1 ]; then
-            sh "$f" --with-media
-        else
-            sh "$f"
-        fi
+        # selanjutnya: sh "$f"
+        sh "$f"
         rc=$?
         [ "$rc" -eq 0 ] || break
     done
@@ -205,13 +213,6 @@ fi
 say "  Menjalankan installer LordOS"
 say "  (installer ini sudah dipatch agar menerima Debian trixie)"
 say ""
-
-# --with-media hanya berarti di jalur Forky: di trixie paket LordOS memakai
-# FFmpeg 7 yang memang ada di sana, jadi tidak ada yang perlu diaktifkan.
-# install.sh tidak mengenal flag ini, jadi jangan diteruskan (ia akan menolaknya).
-if [ "$WITH_MEDIA" -eq 1 ]; then
-    warn "--with-media diabaikan: di trixie fitur media aktif tanpa flag ini"
-fi
 
 # shellcheck disable=SC2086 # $PASS_ARGS adalah daftar argumen; --with-media sudah disaring
 sh "$INST" $PASS_ARGS

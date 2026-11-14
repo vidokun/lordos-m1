@@ -123,16 +123,23 @@ Di Debian **trixie**, ia memakai `install.sh` biasa.
 ### Opsional — aktifkan video, kamera, mikrofon
 
 Di Forky, `lord-media` (satu-satunya biner yang memuat FFmpeg) tidak bisa dipasang
-dengan cara biasa. Untuk mengaktifkannya:
+dengan cara biasa: paket LordOS dibangun terhadap FFmpeg **7**, Forky membawa
+FFmpeg **8**. `enable-media.sh` mengembalikannya:
 
 ```sh
-sudo sh setup.sh --with-media
+sh enable-media.sh                    # periksa saja, tidak mengubah apa pun
+sudo sh enable-media.sh --apply       # terapkan
+sudo sh enable-media.sh --revert      # batalkan
 ```
 
-Ini mengambil FFmpeg 7 dari Trixie. **Ini mencampur dua rilis Debian** — baca
-peringatannya di [`MEDIA.md`](MEDIA.md) sebelum memilih. Lewati langkah ini kalau
-Anda tidak butuh pemutaran video, kamera, atau mikrofon: desktop, browser, file
-manager dan audio biasa tetap jalan tanpa itu.
+Ia memasang FFmpeg 7 dari Trixie (dipin, hanya lima paket) lalu mengambil
+`lord-media` dari paket LordOS yang **sudah terpasang** — tanpa mengunduh 31 MB
+lagi. Setelah itu restart sesi: `systemctl restart lordos.service`.
+
+**Ini mencampur dua rilis Debian.** Risikonya sudah diukur di
+[`MEDIA.md`](MEDIA.md): tiga paket toolchain turun versi, `libc6` tidak.
+Lewati langkah ini kalau Anda tidak butuh pemutaran video, kamera, atau mikrofon
+— desktop, browser, file manager dan audio biasa tetap jalan tanpa itu.
 
 ---
 
@@ -250,6 +257,7 @@ diskutil eraseVolume free free disk0sN
 | `finish-setup.sh` | Bagian sistem yang `fix-forky.sh` lewati (service, greeter, grup). |
 | `doctor.sh` | Pemeriksa menyeluruh setelah terpasang. Hanya membaca. |
 | `check-icons.sh` | Cari tahu ikon mana yang kosong dan font apa yang kurang. |
+| `enable-media.sh` | Aktifkan video, kamera, mikrofon di Forky (`--apply`/`--revert`). |
 | `fix-icons.sh` | Pasang tema ikon GTK/Qt (Adwaita, hicolor). |
 | `test.sh` | Test untuk `check.sh` dan router `setup.sh`. |
 | `MEDIA.md` | Cara mengaktifkan video, kamera, mikrofon di Forky. |

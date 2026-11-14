@@ -8,26 +8,30 @@ SETUP="$1"
 fails=0
 checks=0
 
-# The flag loop, sliced out of setup.sh: from WITH_MEDIA=0 through the loop's done.
+# The flag loop, sliced out of setup.sh: from PASS_ARGS="" through the loop's done.
 router() {
-    sed -n '/^WITH_MEDIA=0$/,/^done$/p' "$SETUP"
-    printf 'printf "%%s|%%s\\n" "$WITH_MEDIA" "$PASS_ARGS"\n'
+    sed -n '/^PASS_ARGS=""$/,/^done$/p' "$SETUP"
+    printf 'printf "%%s\\n" "$PASS_ARGS"\n'
 }
 
 run() {
     checks=$((checks + 1))
     want=$1; shift
     out=$(router | sh -s -- "$@" 2>&1)
-    case "$out" in
-        *"$want"*) ;;
-        *) fails=$((fails + 1)); printf 'FAILED: argv [%s]\n  want: %s\n  got:  %s\n' "$ARGV" "$want" "$out" ;;
-    esac
+    # Exact match, not substring: " --yes" is contained in " --with-media --yes",
+    # so a substring test would miss exactly the leak this guards against.
+    if [ "$out" != "$want" ]; then
+        fails=$((fails + 1))
+        printf 'FAILED: argv [%s]\n  want: [%s]\n  got:  [%s]\n' "$ARGV" "$want" "$out"
+    fi
 }
 
-ARGV="--with-media --yes";  run "1| --yes" --with-media --yes
-ARGV="--with-media";        run "1|" --with-media
-ARGV="--yes";               run "0| --yes" --yes
-ARGV="";                    run "0|"
+# --with-media must NOT be forwarded to install.sh: install.sh rejects unknown
+# options ("unknown option: --with-media"), and the media path now lives in
+# enable-media.sh. It is answered in place and dropped from the argv.
+ARGV="--with-media --yes";  run " --yes" --with-media --yes
+ARGV="--yes";               run " --yes" --yes
+ARGV="";                    run ""
 
 # The Forky routing decision, sliced out of setup.sh: forky and sid must take
 # fix-forky.sh's path (install.sh cannot satisfy FFmpeg 7 there); trixie must not.

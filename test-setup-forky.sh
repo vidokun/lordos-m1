@@ -37,38 +37,43 @@ prelude() {
     printf 'GRN=""; BLD=""; OFF=""; RED=""; YLW=""\n'
     printf 'say() { :; }; ok() { :; }; warn() { :; }; hdr() { :; }\n'
     printf 'die() { echo "DIE $*"; exit 1; }\n'
-    printf 'DIR="%s"; RAW="file://%s"; WITH_MEDIA=%s; PASS_ARGS=""; to_clean=""\n' \
-        "$work" "$work" "$1"
+    printf 'DIR="%s"; RAW="file://%s"; PASS_ARGS=""; to_clean=""\n' \
+        "$work" "$work"
 }
 
 run_case() {
     checks=$((checks + 1))
-    codename=$1; media=$2; expect=$3; forbid=$4
+    codename=$1; expect=$2; forbid=$3
     os=$(mktemp) || exit 1
     printf 'VERSION_CODENAME=%s\n' "$codename" > "$os"
-    out=$({ prelude "$media"; branch; } | OS_RELEASE="$os" sh -s 2>&1)
+    out=$({ prelude; branch; } | OS_RELEASE="$os" sh -s 2>&1)
     rm -f "$os"
     case "$out" in
         *"$expect"*) ;;
-        *) fails=$((fails + 1)); printf 'FAILED [%s media=%s]: want %s\n  got: %s\n' "$codename" "$media" "$expect" "$out" ;;
+        *) fails=$((fails + 1)); printf 'FAILED [%s]: want %s\n  got: %s\n' "$codename" "$expect" "$out" ;;
     esac
     if [ -n "$forbid" ]; then
         case "$out" in
-            *"$forbid"*) fails=$((fails + 1)); printf 'FAILED [%s media=%s]: must NOT contain %s\n  got: %s\n' "$codename" "$media" "$forbid" "$out" ;;
+            *"$forbid"*) fails=$((fails + 1)); printf 'FAILED [%s]: must NOT contain %s\n  got: %s\n' "$codename" "$forbid" "$out" ;;
         esac
     fi
 }
 
-run_case forky 0 "fix-forky.sh called:" "install.sh called"
-run_case forky 0 "finish-setup.sh called:" ""
-run_case forky 1 "fix-forky.sh called: --with-media" ""
-run_case sid 0 "fix-forky.sh called:" "install.sh called"
+run_case forky "fix-forky.sh called:" "install.sh called"
+run_case forky "finish-setup.sh called:" ""
+run_case sid "fix-forky.sh called:" "install.sh called"
+
+# Media is a separate script now (enable-media.sh, run after the install) and it
+# reuses the installed package instead of downloading 31 MB again. setup.sh must
+# therefore never hand --with-media to fix-forky.sh any more.
+run_case forky "" "--with-media"
+run_case sid "" "--with-media"
 
 # trixie and older releases must NOT take the forky branch. The branch stops at
 # its closing `fi`, so "no forky output" is the assertion — not "install.sh ran",
 # which happens after the branch.
-run_case trixie 0 "" "fix-forky"
-run_case bookworm 0 "" "fix-forky"
+run_case trixie "" "fix-forky"
+run_case bookworm "" "fix-forky"
 
 # A forky run that stops at fix-forky must not claim success.
 run_partial() {
