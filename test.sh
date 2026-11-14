@@ -155,5 +155,17 @@ else
     t_fail "kasus 9: test-enable-media.sh tidak ditemukan"
 fi
 
+# --- case 10: check-performance.sh membaca jalur komposisi dengan benar ------
+# "GPU composition (llvmpipe …)" masih jalur GPU; menyebutnya CPU path akan
+# mengirim user memperbaiki hal yang salah.
+t_ok
+if [ -f "$DIR/test-check-performance.sh" ]; then
+    if ! sh "$DIR/test-check-performance.sh" "$DIR/check-performance.sh" >/dev/null 2>&1; then
+        t_fail "kasus 10: check-performance.sh salah membaca jalur komposisi"
+    fi
+else
+    t_fail "kasus 10: test-check-performance.sh tidak ditemukan"
+fi
+
 printf '\n%d pemeriksaan, %d gagal\n' "$CHECKS" "$FAILS"
 [ "$FAILS" -eq 0 ]

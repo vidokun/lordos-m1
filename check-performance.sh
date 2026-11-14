@@ -30,35 +30,60 @@ fix()  { printf '      %s→ %s%s\n' "$YLW" "$1" "$OFF"; }
 
 hdr "1. Jalur komposisi (ini yang menentukan)"
 
-LOGS="/var/log/lordos/users/*/compositor.log"
-comp=''
+LOGS="/var/log/lordos/log/users/*/compositor.log /var/log/lordos/users/*/compositor.log"
+# Tanpa lord-sessiond, log sesi ada di ~/.cache/lordos (lordlog.c:106). Untuk
+# sesi yang sedang berjalan, $HOME skrip ini adalah home user itu.
+[ -n "${HOME:-}" ] && LOGS="$LOGS $HOME/.cache/lordos/compositor.log"
+line=''
 for f in $LOGS; do
     [ -r "$f" ] || continue
-    c=$(grep -oE "GPU composition|CPU composition|the renderer is software" "$f" 2>/dev/null | tail -1)
-    [ -n "$c" ] && comp="$c" && log_f="$f"
+    l=$(grep -h "gpu: " "$f" 2>/dev/null | tail -1)
+    [ -n "$l" ] && line="$l" && log_f="$f"
 done
 # fallback: journal, seperti yang dipakai doctor.sh
-if [ -z "$comp" ]; then
-    comp=$(journalctl -b -u lordos.service --no-pager 2>/dev/null \
-           | grep -oiE "GPU composition|CPU composition|the renderer is software" | tail -1)
-    [ -n "$comp" ] && log_f="journalctl -u lordos.service"
+if [ -z "$line" ]; then
+    l=$(journalctl -b -u lordos.service --no-pager 2>/dev/null | grep "gpu: " | tail -1)
+    [ -n "$l" ] && line="$l" && log_f="journalctl -u lordos.service"
 fi
 
-case "$comp" in
-    "GPU composition"*)
-        ok "GPU composition — animasi memakai GPU" ;;
-    "CPU composition"*)
-        bad "CPU composition — animasi digambar di CPU, ini penyebab lag"
-        note "Penyebabnya renderer software (llvmpipe/softpipe): Mesa tidak membuka Apple GPU."
-        fix "lihat bagian 2 dan 3 di bawah" ;;
-    "the renderer is software"*)
-        bad "renderer software (llvmpipe/softpipe) — kompositor jatuh ke CPU"
-        fix "lihat bagian 2 dan 3 di bawah" ;;
+# Baris-baris dari gpu.c. Yang sukses menyebut renderer-nya, yang gagal
+# menyebut alasannya — jadi alasannya dibaca, bukan disimpulkan:
+#   gpu: GPU composition (llvmpipe …, EGL 1.5, dmabuf …, render …, display …)
+#   gpu: the renderer is software (llvmpipe …): CPU composition
+#   gpu: no GBM on the card, CPU composition
+#   gpu: off (LORD_GPU=0), CPU composition
+# "GPU composition (llvmpipe …)" MASIH jalur GPU — hanya renderer software.
+case "$line" in
     "")
         warn "belum bisa dibaca dari log"
-        note "Log kompositor hanya ada setelah sesi LordOS pernah masuk."
-        fix "grep -i 'composition\\|renderer' /var/log/lordos/users/*/compositor.log"
-        fix "journalctl -b -u lordos.service | grep -i 'composition\\|renderer'" ;;
+        note "Dibaca dari /var/log/lordos/users/*/compositor.log dan ~/.cache/lordos."
+        fix "grep 'gpu: ' /var/log/lordos/users/*/compositor.log | tail -1"
+        fix "grep 'gpu: ' ~/.cache/lordos/compositor.log | tail -1" ;;
+    *"GPU composition"*)
+        ok "GPU composition"
+        note "$line"
+        case "$line" in
+            *llvmpipe*|*softpipe*|*swrast*)
+                warn "renderer-nya software (llvmpipe): digambar di atas GPU, bukan CPU LordOS"
+                note "Jalurnya GPU, tapi driver asli Apple tidak dipakai — itu yang membuatnya lebih lambat." ;;
+            *) ok "renderer hardware — jalur tercepat" ;;
+        esac ;;
+    *"CPU composition"*)
+        bad "CPU composition — animasi digambar di CPU, inilah lag-nya"
+        note "$line"
+        # Alasannya tertulis di baris itu; tiap alasan butuh tindakan berbeda.
+        case "$line" in
+            *"LORD_GPU=0"*)         fix "LORD_GPU=0 di environment mematikan GPU: hapus dari /etc/environment atau profil sesi" ;;
+            *"no GBM"*)             fix "GBM tidak tersedia untuk card ini (libgbm1 / driver DRM)" ;;
+            *"no 3D acceleration"*) fix "driver card ini melaporkan tanpa 3D; LORD_GPU=1 memaksa mencoba" ;;
+            *"no EGL"*|*"EGL did not start"*) fix "EGL gagal start: periksa libegl-mesa0 dan /dev/dri" ;;
+            *"no XRGB8888"*)        fix "card tidak menawarkan config EGL XRGB8888" ;;
+            *"context"*)            fix "konteks/surface GLES2 gagal dibuat" ;;
+            *"shaders"*)            fix "shader gagal dikompilasi — bug driver, bukan pengaturan" ;;
+            *"renderer is software"*) fix "Mesa memilih renderer software untuk card ini: tidak ada driver hardware yang cocok" ;;
+            *)                      fix "alasannya ada di baris di atas" ;;
+        esac ;;
+    *) note "baris gpu: tidak dikenali: $line" ;;
 esac
 
 [ -n "${log_f:-}" ] && note "sumber: $log_f"
