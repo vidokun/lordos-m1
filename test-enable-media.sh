@@ -136,6 +136,12 @@ refuse "revert does not delete as a non-root user" "$o" "sumber trixie, pin, dan
 o=$(run "$work/os-forky" --nonsense)
 expect "unknown flag is refused" "$o" "argumen tidak dikenal"
 
+# --- 9b. --help works when piped, where $0 is "sh" and not a readable file ---
+# Every script here is meant to be read as `curl ... | sh`, so this matters.
+o=$(cat "$S" | sh -s -- --help 2>&1)
+expect "piped --help prints the options" "$o" "--apply"
+refuse "piped --help does not leak a sed error" "$o" "No such file"
+
 # --- 10. the post-install verification catches a half-finished install -------
 # The state check (before) and the verification (after) are different loops; a
 # sabotage in one is invisible to the other. Here FFmpeg 7 looks installed, so

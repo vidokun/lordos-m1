@@ -50,7 +50,11 @@ for a in "$@"; do
     case "$a" in
         --apply)  MODE=apply ;;
         --revert) MODE=revert ;;
-        -h|--help) sed -n '2,26p' "$0"; exit 0 ;;
+        -h|--help)
+            # Di-pipe (curl | sh), $0 adalah "sh" — bukan berkas yang bisa dibaca.
+            [ -f "$0" ] && sed -n '2,26p' "$0"
+            printf '\nPilihan:\n  (tanpa argumen)  periksa saja, tidak mengubah apa pun\n  --apply          terapkan\n  --revert         batalkan\n\n'
+            exit 0 ;;
         *) die "argumen tidak dikenal: $a (pakai --apply atau --revert)" ;;
     esac
 done
