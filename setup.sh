@@ -17,7 +17,13 @@ if [ -t 1 ]; then
     YLW=$(printf '\033[33m'); BLD=$(printf '\033[1m'); OFF=$(printf '\033[0m')
 fi
 
-DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+# Saat dijalankan sebagai file, DIRECTORY = folder skrip. Saat di-pipe (curl | sh),
+# $0 bukan path yang bisa dipercaya — jadi DIRECTORY kosong dan install.sh diunduh.
+DIR=""
+if [ -f "$0" ]; then
+    DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || DIR=""
+fi
+RAW="${LORDOS_RAW:-https://raw.githubusercontent.com/vidokun/lordos-m1/main}"
 
 say()  { printf '%s\n' "$*"; }
 hdr()  { printf '\n%s== %s ==%s\n\n' "$BLD" "$1" "$OFF"; }
@@ -26,10 +32,18 @@ warn() { printf '  %s!%s %s\n' "$YLW" "$OFF" "$1"; }
 die()  { printf '\n%s✗ %s%s\n\n' "$RED" "$1" "$OFF" >&2; exit 1; }
 
 need_root() {
-    if [ "$(id -u)" -ne 0 ]; then
-        say "Skrip ini perlu root. Menjalankan ulang dengan sudo..."
+    [ "$(id -u)" -eq 0 ] && return 0
+    say "Skrip ini perlu root. Menjalankan ulang dengan sudo..."
+    if [ -f "$0" ]; then
         exec sudo -E sh "$0" "$@"
     fi
+    # Di-pipe (curl | sh): tidak ada file untuk dijalankan ulang. Simpan dulu.
+    self=$(mktemp) || die "tidak bisa membuat file sementara"
+    if ! curl -fsSL -o "$self" "$RAW/setup.sh"; then
+        rm -f "$self"
+        die "tidak bisa menyimpan skrip untuk sudo — jalankan dengan sudo sejak awal"
+    fi
+    exec sudo -E sh "$self" "$@"
 }
 
 need_root "$@"
@@ -98,12 +112,31 @@ fi
 
 hdr "LordOS"
 
-say "  Menjalankan installer LordOS dari folder ini..."
+INST=""
+if [ -n "$DIR" ] && [ -f "$DIR/install.sh" ]; then
+    INST="$DIR/install.sh"
+fi
+
+if [ -z "$INST" ]; then
+    say "  Mengunduh installer LordOS..."
+    tmp=$(mktemp) || die "tidak bisa membuat file sementara"
+    if curl -fsSL -o "$tmp" "$RAW/install.sh"; then
+        INST="$tmp"
+        ok "installer diunduh"
+    else
+        rm -f "$tmp"
+        die "gagal mengunduh install.sh — periksa jaringan"
+    fi
+fi
+
+say "  Menjalankan installer LordOS"
 say "  (installer ini sudah dipatch agar menerima Debian forky/sid)"
 say ""
 
-sh "$DIR/install.sh" "$@"
+sh "$INST" "$@"
 rc=$?
+
+[ "${tmp:-}" != "" ] && rm -f "$tmp"
 
 printf '\n'
 if [ "$rc" -eq 0 ]; then
