@@ -201,11 +201,14 @@ note "LORD_GPU_DRAG=0 mematikan drag window lewat GPU; jendela digambar CPU."
 note "Di Pi 5 (V3D) itu menaikkan 25.8–27.5 -> 59.8–60.0 fps di bawah beban."
 note "Untuk AGX Apple ini BELUM diukur: coba, lalu bandingkan sendiri."
 say ""
-say "    sudo systemctl edit lordos.service     # tambahkan Environment="
-say "    # lalu, di bagian [Service]:"
-say "    #   Environment=LORD_GPU_DRAG=0"
-say "    sudo systemctl daemon-reload && systemctl restart lordos.service"
-say ""
+cat <<'BLOCK'
+
+    sudo systemctl edit lordos.service     # tambahkan Environment=
+    # lalu, di bagian [Service]:
+    #   Environment=LORD_GPU_DRAG=0
+    sudo systemctl daemon-reload && systemctl restart lordos.service
+
+BLOCK
 note "Kembalikan dengan menghapus baris itu dan restart lagi."
 
 # ---------------------------------------------------------------- ringkasan
