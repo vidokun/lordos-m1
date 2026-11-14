@@ -121,13 +121,30 @@ fi
 
 hdr "Layanan LordOS"
 
+# Unit bisa ter-mask karena `systemd.mask=lordos.service` di kernel command line
+# (cara masuk ke teks saat login screen tidak bisa ditinggalkan). Selama ter-mask,
+# `systemctl enable` PASTI gagal — unmask dulu.
+state=$(systemctl is-enabled lordos.service 2>/dev/null || true)
+case "$state" in
+    masked)
+        warn "lordos.service sedang MASKED (kemungkinan dari systemd.mask= di GRUB)"
+        if systemctl unmask lordos.service >/dev/null 2>&1; then
+            ok "mask dilepas"
+        else
+            bad "gagal unmask lordos.service"; FAIL=$((FAIL+1))
+        fi ;;
+esac
+
 if systemctl is-enabled lordos.service >/dev/null 2>&1; then
     ok "lordos.service sudah enabled"
 else
-    if systemctl enable lordos.service >/dev/null 2>&1; then
+    # tampilkan alasan sebenarnya, jangan telan pesannya
+    if err=$(systemctl enable lordos.service 2>&1); then
         ok "lordos.service di-enable (mulai saat boot)"
     else
-        bad "gagal enable lordos.service"; FAIL=$((FAIL+1))
+        bad "gagal enable lordos.service"
+        [ -n "$err" ] && printf '      %s\n' "$err"
+        FAIL=$((FAIL+1))
     fi
 fi
 
@@ -193,6 +210,18 @@ hdr "Hasil"
 
 if [ "$FAIL" -gt 0 ]; then
     bad "$FAIL masalah belum selesai — lihat tanda ✗ di atas"
+
+    # Jangan biarkan user terkunci: kalau lordos.service tidak bisa jalan dan
+    # getty@tty1 juga ter-mask, tidak ada jalan masuk sama sekali.
+    if ! systemctl is-enabled lordos.service >/dev/null 2>&1; then
+        if [ "$(systemctl is-enabled getty@tty1.service 2>/dev/null || true)" = masked ]; then
+            say ""
+            warn "Mengembalikan login teks di tty1 supaya Anda tidak terkunci"
+            systemctl unmask getty@tty1.service >/dev/null 2>&1 && \
+                ok "getty@tty1 di-unmask (login teks tersedia setelah reboot)"
+        fi
+    fi
+
     printf '\nPerbaiki, lalu jalankan lagi: sudo sh finish-setup.sh\n\n'
     exit 1
 fi
