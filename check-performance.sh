@@ -37,17 +37,32 @@ hdr "1. Jalur komposisi (ini yang menentukan)"
 #
 # Kalau tidak ada yang terbaca, itu sendiri informasi: script ini melaporkan
 # apa yang dilihatnya, bukan menebak path lain.
-LOGS="/var/log/lordos/users/*/compositor.log"
-[ -n "${HOME:-}" ] && LOGS="$LOGS $HOME/.cache/lordos/compositor.log"
+#
+# Dua hal yang salah pada versi awal:
+#   - hanya compositor.log; sesi sebelumnya ada di compositor.log.prev
+#     (lordlog_rotate, lordlog.c:152,215)
+#   - hanya dua path; lordlog_dir() menaruh log di ~/.cache/lordos ATAU di
+#     /var/log/lordos/users/<user> (lordlog.c:117-130)
+# Sesi SEKARANG harus menang atas sesi lalu: *.log dicari lebih dulu di semua
+# pohon, dan *.log.prev hanya dipakai kalau sesi ini belum menulis apa pun.
+DIRS="/var/log/lordos/users/"
+[ -n "${HOME:-}" ] && DIRS="$DIRS $HOME/.cache/lordos/"
 
 line=''
 seen=''
-for f in $LOGS; do
-    [ -e "$f" ] || continue
-    seen="$seen $f"
-    [ -r "$f" ] || { seen="$seen(UNREADABLE)"; continue; }
-    l=$(grep -h "gpu: " "$f" 2>/dev/null | tail -1)
-    [ -n "$l" ] && line="$l" && log_f="$f"
+for suffix in .log .log.prev; do
+    for d in $DIRS; do
+        for f in "$d"*/compositor"$suffix" "$d"compositor"$suffix"; do
+            [ -e "$f" ] || continue
+            case " $seen " in *" $f "*) continue ;; esac
+            seen="$seen $f"
+            [ -r "$f" ] || { seen="$seen(UNREADABLE)"; continue; }
+            l=$(grep -h "gpu: " "$f" 2>/dev/null | tail -1)
+            # yang terakhir dibaca menang, jadi .log.prev tidak menimpa .log:
+            # urutannya luar->dalam, dan hanya diisi kalau masih kosong
+            [ -n "$l" ] && [ -z "$line" ] && line="$l" && log_f="$f"
+        done
+    done
 done
 # journalctl bisa menggantung (atau tidak ada sama sekali di luar Debian).
 # `timeout` tidak ada di macOS, jadi dibungkus sendiri: perintah dijalankan di
@@ -165,7 +180,8 @@ fi
 hdr "3. Angka sesi"
 
 frames=''
-for f in $LOGS; do
+for f in $seen; do
+    case "$f" in *"(UNREADABLE)") continue ;; esac
     [ -r "$f" ] || continue
     l=$(grep -oE "[0-9.]+ *ms" "$f" 2>/dev/null | tail -1)
     [ -n "$l" ] && frames="$frames $l"

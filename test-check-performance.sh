@@ -20,6 +20,14 @@ with_line() {
     printf '%s' "$h"
 }
 
+# The previous session's file: lordlog_rotate renames it to .prev (lordlog.c:152).
+with_prev() {
+    h=$(mktemp -d) || exit 1
+    mkdir -p "$h/.cache/lordos"
+    printf 'started\n%s\n' "$1" > "$h/.cache/lordos/compositor.log.prev"
+    printf '%s' "$h"
+}
+
 section1() {
     # NO_JOURNAL: the journal is the last resort of the script and costs a
     # 5-second timeout per case on a machine where it does not answer. The
@@ -71,6 +79,21 @@ check "EGL failure is named" "$o" "EGL"
 
 h=$(with_line 'gpu: the card (appledrm) has no 3D acceleration: CPU composition'); o=$(section1 "$h"); rm -rf "$h"
 check "no-3D is named" "$o" "3D"
+
+# --- the previous session's log is still a real answer ----------------------
+# lordlog_rotate renames compositor.log to .prev at every session start, so on a
+# freshly logged-in session the file with the answer may be the .prev one.
+h=$(with_prev 'gpu: GPU composition (Apple M1 (G13G B0), EGL 1.5)')
+o=$(section1 "$h"); rm -rf "$h"
+check "the previous session's log is read" "$o" "renderer hardware"
+check "…without claiming there is no log"   "$o" "renderer hardware" "tidak ada baris"
+
+# --- but the current session wins over the previous one ---------------------
+h=$(with_line 'gpu: GPU composition (Apple M3, EGL 1.5)')
+printf 'gpu: the renderer is software (llvmpipe): CPU composition\n' > "$h/.cache/lordos/compositor.log.prev"
+o=$(section1 "$h"); rm -rf "$h"
+check "the current session's log wins over .prev" "$o" "renderer hardware"
+check "…so a stale .prev cannot fake a CPU path"   "$o" "renderer hardware" "inilah lag-nya"
 
 # --- nothing to read ---------------------------------------------------------
 h=$(mktemp -d); o=$(section1 "$h"); rm -rf "$h"
