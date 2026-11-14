@@ -56,7 +56,9 @@ for a in "$@"; do
     case "$a" in
         --with-media) WITH_MEDIA=1 ;;
         -h|--help)
-            sed -n '2,20p' "$0"
+            # Di-pipe (curl | sh), $0 adalah "sh" — bukan berkas yang bisa dibaca,
+            # jadi sed akan mencetak error. Bantuan tetap ditampilkan tanpa header.
+            [ -f "$0" ] && sed -n '2,20p' "$0"
             say ""
             say "Pilihan:"
             say "  --with-media   aktifkan video/kamera/mikrofon (memakai FFmpeg 7 dari Trixie)"
