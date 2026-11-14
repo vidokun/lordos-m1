@@ -21,7 +21,10 @@ with_line() {
 }
 
 section1() {
-    HOME="$1" sh "$S" 2>&1 | sed -n '/1\. Jalur komposisi/,/^2\. Perangkat GPU/p'
+    # NO_JOURNAL: the journal is the last resort of the script and costs a
+    # 5-second timeout per case on a machine where it does not answer. The
+    # fixtures here are files, so the journal can never add anything.
+    NO_JOURNAL=1 HOME="$1" sh "$S" 2>&1 | sed -n '/1\. Jalur komposisi/,/^2\. Perangkat GPU/p'
 }
 
 check() {   # check <label> <output> <required> [forbidden]
@@ -71,9 +74,9 @@ check "no-3D is named" "$o" "3D"
 
 # --- nothing to read ---------------------------------------------------------
 h=$(mktemp -d); o=$(section1 "$h"); rm -rf "$h"
-check "no log says so instead of guessing" "$o" "belum bisa dibaca"
-check "no log does not claim CPU"         "$o" "belum bisa dibaca" "inilah lag-nya"
-check "no log does not claim GPU either"  "$o" "belum bisa dibaca" "renderer hardware"
+check "no log says so instead of guessing" "$o" "tidak ada baris gpu: yang bisa dibaca"
+check "no log does not claim CPU"         "$o" "tidak ada baris gpu: yang bisa dibaca" "inilah lag-nya"
+check "no log does not claim GPU either"  "$o" "tidak ada baris gpu: yang bisa dibaca" "renderer hardware"
 
 printf '\n%d checks, %d failed\n' "$checks" "$fails"
 [ "$fails" -eq 0 ]
