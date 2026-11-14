@@ -1,0 +1,80 @@
+{
+    "os_list": [
+        {
+            "name": "Debian GNU/Linux 13 (trixie) minimal (console) — frozen, see notes",
+            "default_os_name": "Debian 13 trixie minimal (console)",
+            "boot_object": "m1n1.bin",
+            "next_object": "m1n1/boot.bin",
+            "package": "debian-asahi-trixie-console@261015101957-33576de.zip",
+            "icon": "debian.icns",
+            "supported_fw": [
+                "12.3",
+                "12.3.1",
+                "13.5"
+            ],
+            "partitions": [
+                {
+                    "name": "EFI",
+                    "type": "EFI",
+                    "size": "524288000B",
+                    "format": "fat",
+                    "volume_id": "0x6b620ef3",
+                    "copy_firmware": true,
+                    "copy_installer_data": true,
+                    "source": "esp"
+                },
+                {
+                    "name": "Boot",
+                    "type": "Linux",
+                    "size": "1610612736B",
+                    "image": "boot.img"
+                },
+                {
+                    "name": "Root",
+                    "type": "Linux",
+                    "size": "3688890368B",
+                    "expand": true,
+                    "image": "root.img"
+                }
+            ]
+        },
+        {
+            "name": "Debian GNU/Linux Testing (forky) minimal (console) — maintained",
+            "default_os_name": "Debian Testing minimal (console)",
+            "boot_object": "m1n1.bin",
+            "next_object": "m1n1/boot.bin",
+            "package": "debian-asahi-testing-console@261015085842-33576de.zip",
+            "icon": "debian.icns",
+            "supported_fw": [
+                "12.3",
+                "12.3.1",
+                "13.5"
+            ],
+            "partitions": [
+                {
+                    "name": "EFI",
+                    "type": "EFI",
+                    "size": "524288000B",
+                    "format": "fat",
+                    "volume_id": "0x6b620ef3",
+                    "copy_firmware": true,
+                    "copy_installer_data": true,
+                    "source": "esp"
+                },
+                {
+                    "name": "Boot",
+                    "type": "Linux",
+                    "size": "1610612736B",
+                    "image": "boot.img"
+                },
+                {
+                    "name": "Root",
+                    "type": "Linux",
+                    "size": "3688890368B",
+                    "expand": true,
+                    "image": "root.img"
+                }
+            ]
+        }
+    ]
+}
