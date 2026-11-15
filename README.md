@@ -185,34 +185,9 @@ it will do first; the checking ones change nothing).
 | `scripts/check-icons.sh` | Which icon glyphs have no font (`--install`) |
 | `scripts/fix-icons.sh` | Install the GTK/Qt icon themes (Adwaita, hicolor) |
 | `scripts/check-performance.sh` | Why animation is slow, with numbers |
-| `scripts/add-sway-desktop.sh` | A second Wayland desktop (sway) with a dock and a top bar, next to LordOS |
 
 `lib/` holds what `install.sh` calls; you do not need to run it by hand.
 `tests/` holds the test suites: `sh tests/test.sh` runs them all.
-
----
-
-## Want a Wayland desktop with a dock, without LordOS?
-
-LordOS's Dock and menu bar are drawn by its own compositor's theme, so they cannot
-be moved into another desktop, and `lord-server` takes the display directly (no
-nested mode). The alternative is a second session that looks similar:
-
-```sh
-sh scripts/add-sway-desktop.sh              # check only
-sudo sh scripts/add-sway-desktop.sh --apply
-```
-
-That installs **sway** (wlroots) with **waybar** on top, **nwg-dock** at the
-bottom, **fuzzel** as the launcher on Super, and **dunst** for notifications. It
-adds a *"Sway (LordOS-like)"* entry to the login screen and leaves LordOS
-completely alone — you pick one at login.
-
-It is not LordOS's Dock: that one is part of a different compositor. This is a
-separate dock that looks similar and behaves the way a dock should.
-
-Undo with `sh scripts/add-sway-desktop.sh --revert` (no root needed: they are
-your own files).
 
 ---
 

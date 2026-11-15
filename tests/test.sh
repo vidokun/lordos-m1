@@ -177,15 +177,5 @@ else
     t_fail "kasus 11: test-install-wizard.sh tidak ditemukan"
 fi
 
-# --- case 12: add-sway-desktop.sh memutuskan hal yang benar -----------------
-t_ok
-if [ -f "$DIR/test-add-sway-desktop.sh" ]; then
-    if ! sh "$DIR/test-add-sway-desktop.sh" "$DIR/../scripts/add-sway-desktop.sh" >/dev/null 2>&1; then
-        t_fail "kasus 12: add-sway-desktop.sh salah (user, rilis, atau --revert)"
-    fi
-else
-    t_fail "kasus 12: test-add-sway-desktop.sh tidak ditemukan"
-fi
-
 printf '\n%d pemeriksaan, %d gagal\n' "$CHECKS" "$FAILS"
 [ "$FAILS" -eq 0 ]
