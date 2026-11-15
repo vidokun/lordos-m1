@@ -185,9 +185,34 @@ mengubah apa pun).
 | `scripts/check-icons.sh` | Glyph ikon mana yang tidak punya font (`--install`) |
 | `scripts/fix-icons.sh` | Pasang tema ikon GTK/Qt (Adwaita, hicolor) |
 | `scripts/check-performance.sh` | Kenapa animasi lambat, dengan angka |
+| `scripts/add-sway-desktop.sh` | Desktop Wayland kedua (sway) dengan dock dan bar atas, di samping LordOS |
 
 `lib/` berisi yang dipanggil `install.sh`; tidak perlu dijalankan sendiri.
 `tests/` berisi suite uji: `sh tests/test.sh` menjalankan semuanya.
+
+---
+
+## Ingin desktop Wayland dengan dock, tanpa LordOS?
+
+Dock dan menu bar LordOS digambar oleh tema kompositor LordOS sendiri, jadi
+tidak bisa dipindahkan ke desktop lain, dan `lord-server` mengambil display
+langsung (tidak ada mode nested). Alternatifnya sesi kedua yang mirip:
+
+```sh
+sh scripts/add-sway-desktop.sh              # periksa saja
+sudo sh scripts/add-sway-desktop.sh --apply
+```
+
+Itu memasang **sway** (wlroots) dengan **waybar** di atas, **nwg-dock** di
+bawah, **fuzzel** sebagai launcher pada tombol Super, dan **dunst** untuk
+notifikasi. Ia menambah entri *"Sway (LordOS-like)"* di layar login dan tidak
+mengganggu LordOS — Anda pilih salah satu saat login.
+
+Ini bukan Dock LordOS: yang itu bagian dari kompositor lain. Ini dock terpisah
+yang tampil mirip dan berperilaku sebagaimana dock seharusnya.
+
+Batalkan dengan `sh scripts/add-sway-desktop.sh --revert` (tidak perlu root:
+itu file Anda sendiri).
 
 ---
 
