@@ -229,7 +229,7 @@ if getent passwd lordos-greeter >/dev/null 2>&1; then
     ok "user lordos-greeter ada"
 else
     bad "user lordos-greeter TIDAK ADA — login screen akan bilang 'no users'"
-    fix "sudo sh finish-setup.sh"
+    fix "sudo sh lib/finish-setup.sh"
 fi
 
 # ---------------------------------------------------------------- hasil

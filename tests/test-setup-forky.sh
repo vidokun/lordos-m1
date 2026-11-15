@@ -1,12 +1,12 @@
 #!/bin/sh
-# Verifies setup.sh's Forky branch actually calls fix-forky.sh then
+# Verifies lib/setup.sh's Forky branch actually calls fix-forky.sh then
 # finish-setup.sh (and passes --with-media), and that trixie does not.
 #
-# It slices the real branch out of setup.sh rather than running the whole script,
+# It slices the real branch out of lib/setup.sh rather than running the whole script,
 # because the earlier sections check for Apple hardware and root — neither of
 # which a test machine has.
 set -u
-SETUP="${1:-/Users/dokun/Documents/VIBECODING/lordos/lordos-m1/setup.sh}"
+SETUP="${1:-$(dirname -- "$0")/../lib/setup.sh}"
 [ -f "$SETUP" ] || { echo "dryrun: no setup.sh at $SETUP" >&2; exit 1; }
 
 work=$(mktemp -d) || exit 1

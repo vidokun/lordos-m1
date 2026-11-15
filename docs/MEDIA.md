@@ -90,7 +90,7 @@ dan tidak ada pencampuran rilis.
 ## Cara memeriksa apakah media sudah jalan
 
 ```sh
-sh doctor.sh
+sh scripts/doctor.sh
 ```
 
 Lihat bagian **4. Media**. Yang benar:

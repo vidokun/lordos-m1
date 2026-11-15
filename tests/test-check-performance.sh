@@ -6,7 +6,7 @@
 # needs a different fix. These cases feed it log fixtures and assert it says the
 # right thing, without Debian, root or a GPU.
 set -u
-S="${1:-$(dirname -- "$0")/check-performance.sh}"
+S="${1:-$(dirname -- "$0")/../scripts/check-performance.sh}"
 [ -f "$S" ] || { echo "test-check-performance: no script at $S" >&2; exit 1; }
 
 fails=0

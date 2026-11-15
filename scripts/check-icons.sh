@@ -136,7 +136,7 @@ if [ "$blank" -eq 0 ]; then
     printf '  %s%sSemua glyph punya font.%s Kalau ikon masih kosong, penyebabnya bukan font.\n\n' \
         "$OKC" "$BLD" "$OFF"
     say "  Berikutnya: cek apakah sesi sudah memuat font baru — logout lalu login."
-    say "  Kalau tetap kosong, jalankan: sh doctor.sh"
+    say "  Kalau tetap kosong, jalankan: sh scripts/doctor.sh"
     exit 0
 fi
 

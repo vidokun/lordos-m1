@@ -19,10 +19,9 @@ fi
 
 # Saat dijalankan sebagai file, DIRECTORY = folder skrip. Saat di-pipe (curl | sh),
 # $0 bukan path yang bisa dipercaya — jadi DIRECTORY kosong dan install.sh diunduh.
-DIR=""
-if [ -f "$0" ]; then
-    DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || DIR=""
-fi
+DIR=$(dirname -- "$0" 2>/dev/null)
+[ -f "$0" ] && DIR=$(cd -- "$DIR" 2>/dev/null && pwd) || DIR=""
+[ -d "$DIR" ] || DIR=""
 RAW="${LORDOS_RAW:-https://raw.githubusercontent.com/vidokun/lordos-m1/main}"
 
 say()  { printf '%s\n' "$*"; }
@@ -59,8 +58,7 @@ for a in "$@"; do
             say "  --with-media sudah tidak dipakai setup.sh."
             say "  Untuk fitur media sesudah LordOS terpasang:"
             say ""
-            say "      curl -fsSL -o enable-media.sh https://raw.githubusercontent.com/vidokun/lordos-m1/main/enable-media.sh"
-            say "      sudo sh enable-media.sh --apply"
+            say "      sudo sh scripts/enable-media.sh --apply   # from a clone of the repo"
             say ""
             say "  Pemasangan LordOS di atas tetap dilanjutkan tanpa media."
             say ""
@@ -169,9 +167,9 @@ if [ "$NEED_FORKY_PATH" -eq 1 ]; then
             f="$DIR/$s"
         else
             f=$(mktemp) || die "tidak bisa membuat file sementara"
-            if ! curl -fsSL -o "$f" "$RAW/$s"; then
+            if ! curl -fsSL -o "$f" "$RAW/lib/$s"; then
                 rm -f "$f"
-                die "gagal mengunduh $s — periksa jaringan"
+                die "gagal mengunduh lib/$s — periksa jaringan"
             fi
             to_clean="$to_clean $f"
         fi
@@ -194,19 +192,19 @@ if [ "$NEED_FORKY_PATH" -eq 1 ]; then
 fi
 
 INST=""
-if [ -n "$DIR" ] && [ -f "$DIR/install.sh" ]; then
-    INST="$DIR/install.sh"
+if [ -n "$DIR" ] && [ -f "$DIR/lordos-install.sh" ]; then
+    INST="$DIR/lordos-install.sh"
 fi
 
 if [ -z "$INST" ]; then
     say "  Mengunduh installer LordOS..."
     tmp=$(mktemp) || die "tidak bisa membuat file sementara"
-    if curl -fsSL -o "$tmp" "$RAW/install.sh"; then
+    if curl -fsSL -o "$tmp" "$RAW/lib/lordos-install.sh"; then
         INST="$tmp"
         ok "installer diunduh"
     else
         rm -f "$tmp"
-        die "gagal mengunduh install.sh — periksa jaringan"
+        die "gagal mengunduh lib/lordos-install.sh — periksa jaringan"
     fi
 fi
 

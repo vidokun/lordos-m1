@@ -8,8 +8,8 @@
 
 set -u
 
-DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-CHECK="$DIR/check.sh"
+DIR=$(cd -- "$(dirname -- "$0")" && pwd)
+CHECK="$DIR/../scripts/check.sh"
 [ -f "$CHECK" ] || { echo "test.sh: check.sh tidak ditemukan" >&2; exit 1; }
 
 FAILS=0
@@ -128,7 +128,7 @@ fi
 DIR=$(dirname -- "$0")
 t_ok
 if [ -f "$DIR/test-setup-router.sh" ]; then
-    if ! sh "$DIR/test-setup-router.sh" "$DIR/setup.sh" >/dev/null 2>&1; then
+    if ! sh "$DIR/test-setup-router.sh" "$DIR/../lib/setup.sh" >/dev/null 2>&1; then
         t_fail "kasus 7: router setup.sh salah (argumen atau forky/trixie)"
     fi
 else
@@ -138,7 +138,7 @@ fi
 # --- case 8: jalur forky benar-benar memanggil skrip yang tepat ------------
 t_ok
 if [ -f "$DIR/test-setup-forky.sh" ]; then
-    if ! sh "$DIR/test-setup-forky.sh" "$DIR/setup.sh" >/dev/null 2>&1; then
+    if ! sh "$DIR/test-setup-forky.sh" "$DIR/../lib/setup.sh" >/dev/null 2>&1; then
         t_fail "kasus 8: jalur forky tidak memanggil fix-forky.sh/finish-setup.sh"
     fi
 else
@@ -148,7 +148,7 @@ fi
 # --- case 9: enable-media.sh memutuskan hal yang benar ----------------------
 t_ok
 if [ -f "$DIR/test-enable-media.sh" ]; then
-    if ! sh "$DIR/test-enable-media.sh" "$DIR/enable-media.sh" >/dev/null 2>&1; then
+    if ! sh "$DIR/test-enable-media.sh" "$DIR/../scripts/enable-media.sh" >/dev/null 2>&1; then
         t_fail "kasus 9: enable-media.sh salah memutuskan (forky/trixie/aktif)"
     fi
 else
@@ -160,11 +160,21 @@ fi
 # mengirim user memperbaiki hal yang salah.
 t_ok
 if [ -f "$DIR/test-check-performance.sh" ]; then
-    if ! sh "$DIR/test-check-performance.sh" "$DIR/check-performance.sh" >/dev/null 2>&1; then
+    if ! sh "$DIR/test-check-performance.sh" "$DIR/../scripts/check-performance.sh" >/dev/null 2>&1; then
         t_fail "kasus 10: check-performance.sh salah membaca jalur komposisi"
     fi
 else
     t_fail "kasus 10: test-check-performance.sh tidak ditemukan"
+fi
+
+# --- case 11: install.sh (the wizard) memanggil langkah yang benar ----------
+t_ok
+if [ -f "$DIR/test-install-wizard.sh" ]; then
+    if ! sh "$DIR/test-install-wizard.sh" "$DIR/../install.sh" >/dev/null 2>&1; then
+        t_fail "kasus 11: install.sh melewatkan langkah atau menyebut path yang tidak ada"
+    fi
+else
+    t_fail "kasus 11: test-install-wizard.sh tidak ditemukan"
 fi
 
 printf '\n%d pemeriksaan, %d gagal\n' "$CHECKS" "$FAILS"

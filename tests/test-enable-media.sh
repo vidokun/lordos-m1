@@ -6,7 +6,7 @@
 # for. Each case below swaps one of those facts for a stub and asserts the
 # decision changes with it.
 set -u
-S="${1:-$(dirname -- "$0")/enable-media.sh}"
+S="${1:-$(dirname -- "$0")/../scripts/enable-media.sh}"
 [ -f "$S" ] || { echo "test-enable-media: no script at $S" >&2; exit 1; }
 
 work=$(mktemp -d) || exit 1

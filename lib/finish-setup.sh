@@ -12,7 +12,7 @@
 # Skrip ini menambal ketiganya, dengan aman dan idempoten (boleh dijalankan
 # berkali-kali).
 #
-#   sudo sh finish-setup.sh
+#   sudo sh lib/finish-setup.sh
 
 set -u
 
@@ -39,7 +39,7 @@ FAIL=0
 hdr "Memeriksa paket LordOS"
 
 if ! dpkg -s lordos >/dev/null 2>&1; then
-    die "paket lordos belum terpasang. Jalankan fix-forky.sh dulu."
+    die "paket lordos belum terpasang. Jalankan lib/fix-forky.sh dulu."
 fi
 ok "paket lordos terpasang ($(dpkg-query -W -f='${Version}' lordos))"
 
@@ -248,7 +248,7 @@ if [ "$FAIL" -gt 0 ]; then
         fi
     fi
 
-    printf '\nPerbaiki, lalu jalankan lagi: sudo sh finish-setup.sh\n\n'
+    printf '\nPerbaiki, lalu jalankan lagi: sudo sh lib/finish-setup.sh\n\n'
     exit 1
 fi
 

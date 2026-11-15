@@ -78,8 +78,8 @@ Risiko: beberapa paket mungkin tidak punya versi Trixie dan akan tertinggal.
 
 Langkah selanjutnya sama dengan README:
 
-1. `sh check.sh` — periksa kesiapan
-2. `sudo sh setup.sh` — pasang LordOS
+1. `sh scripts/check.sh` — periksa kesiapan
+2. `sudo sh install.sh` — pasang LordOS
 
 **Kabar baik:** installer LordOS di repo ini **sudah menerima Trixie tanpa patch
 tambahan** (Trixie adalah target asli LordOS). Jadi di Trixie Anda bahkan tidak

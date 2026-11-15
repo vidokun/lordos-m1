@@ -19,11 +19,11 @@
 # paket) lalu mengambil lord-media dari paket resmi yang SUDAH TERPASANG di
 # mesin ini — bukan mengunduh ulang paket 31 MB.
 #
-#   sh enable-media.sh             # periksa saja, tidak mengubah apa pun
-#   sudo sh enable-media.sh --apply
+#   sh scripts/enable-media.sh             # periksa saja, tidak mengubah apa pun
+#   sudo sh scripts/enable-media.sh --apply
 #
 # PERINGATAN: ini mencampur dua rilis Debian. Baca MEDIA.md sebelum --apply.
-# Untuk membatalkan: sudo sh enable-media.sh --revert
+# Untuk membatalkan: sudo sh scripts/enable-media.sh --revert
 
 set -u
 
@@ -352,7 +352,7 @@ if [ "$fail" -ne 0 ]; then
     say ""
     note "Bila pustaka hilang setelah --apply, kirimkan keluaran ini:"
     say "    ldd $helper | grep 'not found'"
-    say "    sh doctor.sh"
+    say "    sh scripts/doctor.sh"
     printf '%s\n' ""
     exit 1
 fi
@@ -372,9 +372,9 @@ say ""
 say "    systemctl restart lordos.service"
 say ""
 note "Lalu periksa:"
-say "    sh doctor.sh      # bagian 4 harus menulis 'lord-media ADA'"
+say "    sh scripts/doctor.sh  # bagian 4 harus menulis 'lord-media ADA'"
 say "    ldd $helper | grep 'not found'    # harus kosong"
 say ""
-note "Membatalkan semuanya: sudo sh enable-media.sh --revert"
+note "Membatalkan semuanya: sudo sh scripts/enable-media.sh --revert"
 say ""
 exit 0

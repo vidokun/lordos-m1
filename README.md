@@ -1,189 +1,207 @@
-# LordOS di Mac Apple Silicon
+# LordOS on Apple Silicon
 
-Pasang **LordOS** di MacBook Air/Pro M1 atau M2 Anda, berdampingan dengan macOS.
+**[Bahasa Indonesia →](README.id.md)**
 
-> **Status: eksperimental.** Dibuat untuk satu mesin (MacBook Air M1). Tidak ada
-> jaminan. Tapi semua langkah di sini sudah diperiksa dan tidak ada yang bisa
-> merusak macOS Anda.
+Run LordOS on a MacBook Air/Pro M1 or M2, next to macOS. Two commands, about
+30–45 minutes, and macOS is never touched.
 
----
-
-## Apa yang Anda dapat
-
-LordOS adalah desktop environment Linux (compositor Wayland sendiri, ditulis dalam C).
-Repo ini memasangnya di atas Debian yang sudah berjalan di Mac Anda.
-
-```
-macOS  (tidak disentuh)
-  └── Debian (dipasang oleh installer Asahi/Bananas)
-        └── LordOS (dipasang oleh repo ini)
-```
+> **Status: experimental.** Built and tested for one machine: MacBook Air M1.
+> Nothing here partitions a disk — the Asahi installer does that, and it only
+> uses free space.
 
 ---
 
-## Sebelum mulai
+## What this repository does
 
-Anda perlu:
+LordOS is a Linux desktop environment with its own Wayland compositor, written
+in C. This repository puts it on a Mac that already runs Debian:
+
+```
+macOS                    untouched
+ └── Debian              installed by the Asahi/Bananas installer  (step 1)
+      └── LordOS         installed by this repository             (step 2)
+```
+
+The Asahi project does the hard part — the kernel, the firmware, the drivers.
+This repository adds what is missing for LordOS on top of it: it accepts the
+Debian release Apple Silicon actually runs, repacks the LordOS package where
+Debian's FFmpeg version differs, and installs the fonts and audio packages the
+desktop needs.
+
+---
+
+## Before you start
 
 | | |
 |---|---|
-| **Mac** | MacBook Air/Pro M1 atau M2 (M3/M4 belum didukung) |
-| **macOS** | 13.5 atau lebih baru |
-| **Ruang** | ~25 GB kosong |
-| **Waktu** | 30–45 menit |
+| **Mac** | MacBook Air/Pro M1 or M2. M3/M4 are not supported by the Asahi installer |
+| **macOS** | 13.5 or newer |
+| **Free space** | 25 GB or more (→ About This Mac → Storage) |
+| **Time** | 30–45 minutes |
+| **Network** | Wi-Fi or Ethernet works under Debian |
 
-Cek ruang: ** → About This Mac → Storage**.
+Not sure whether your Mac is supported? The Asahi installer says so before it
+writes anything.
 
 ---
 
-## Langkah 1 — Pasang Debian (lewat installer Asahi/Bananas)
+## Step 1 — Install Debian, with the Asahi/Bananas installer
 
-Ini dilakukan **di macOS**, bukan di Linux.
-
-Buka **Terminal**, lalu:
+**This step runs on macOS.** Open **Terminal**:
 
 ```sh
 curl -L https://bananas-archive.debian.net/install | sh
 ```
 
-Saat installer bertanya:
+The installer asks three things:
 
-| Pertanyaan | Jawab |
+| Question | Answer |
 |---|---|
-| Berapa ruang untuk Linux? | **25 GB** atau lebih |
-| OS apa? | **`Debian GNU/Linux Testing minimal (console)`** |
-| Nama entri boot? | terserah, misal `LordOS` |
+| How much space for Linux? | **25 GB** or more |
+| Which OS? | **`Debian GNU/Linux Testing minimal (console)`** |
+| Boot entry name? | anything, for example `LordOS` |
 
-> ⚠️ **Pilih "minimal (console)"**, jangan GNOME atau KDE. LordOS membawa desktop
-> sendiri, dan GNOME/KDE akan bentrok.
+> **Choose "minimal (console)"**, not GNOME or KDE. LordOS brings its own
+> desktop, and a second one in the same Debian gets in the way.
 
-> ℹ️ Installer ini **tidak menghapus macOS**. Ia hanya memakai ruang kosong.
+> **The installer does not erase macOS.** It only uses free space. It shrinks
+> nothing and moves nothing; if it cannot fit, it stops.
 
-Setelah selesai, matikan mesin. Nyalakan dengan **tekan-tahan tombol power**,
-pilih entri Debian, lalu ikuti setup Debian (bahasa, user, password).
+When it finishes, shut the Mac down. Start it again **holding the power button**
+until you see the boot menu, choose the Debian entry, and finish Debian's own
+setup (language, user, password).
+
+**If the installer offers no "Testing" entry**, its menu changes from week to
+week and the image to pick may be named differently. Any *minimal (console)*
+Bananas image on **forky** or **sid** works; see
+[`docs/TRIXIE.md`](docs/TRIXIE.md) for the Trixie image and why it is not the
+recommended one.
 
 ---
 
-## Langkah 2 — Sambungkan internet
+## Step 2 — Connect and install, in one command
 
-Setelah Debian menyala, Anda akan melihat **layar teks hitam dengan prompt login**.
-Ini normal — belum ada desktop.
+Log in on the Debian text console. There is no desktop yet — that is expected.
 
-Login, lalu sambungkan Wi-Fi:
-
-```sh
-nmtui
-```
-
-Pilih **Activate a connection** → pilih Wi-Fi → masukkan password.
-
-Tes:
+Connect to Wi-Fi first:
 
 ```sh
+nmtui          # Activate a connection → your network → password
 ping -c 2 deb.debian.org
 ```
 
----
-
-## Langkah 3 — Jalankan pemeriksa
+Then run the installer:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/vidokun/lordos-m1/main/check.sh | sh
+curl -fsSL -o install.sh https://raw.githubusercontent.com/vidokun/lordos-m1/main/install.sh
+less install.sh          # read it first; it is 3 screens
+sudo sh install.sh
 ```
 
-Skrip ini **hanya membaca** — tidak memasang atau mengubah apa pun.
+It runs four steps and stops at the first one that fails:
 
-Ia akan menampilkan daftar centang. Baca bagian **Hasil** di bawah:
-
-| Hasil | Artinya |
+| Step | What it does |
 |---|---|
-| `AMAN` | Lanjut ke Langkah 4 |
-| `BOLEH LANJUT, dengan N peringatan` | Lanjut, tapi baca peringatannya |
-| `JANGAN LANJUT` | Ada yang harus diperbaiki — lihat tanda ✗ |
+| **1. Preflight** | machine, kernel, display, `speakersafetyd` — reads only |
+| **2. Install** | `asahi-platform`, then the LordOS package (repacked on forky) |
+| **3. Media** | optional; video, camera, microphone (see below) |
+| **4. Verify** | services, display, icons, audio |
 
----
+Useful options: `--dry-run` shows every command without running any;
+`--with-media` enables video/camera/microphone; `--help` for the rest.
 
-## Langkah 4 — Pasang LordOS
-
-```sh
-curl -fsSL -o setup.sh https://raw.githubusercontent.com/vidokun/lordos-m1/main/setup.sh
-less setup.sh          # baca dulu
-sudo sh setup.sh
-```
-
-Skrip ini akan:
-1. Memeriksa mesin Anda Apple Silicon dan kernelnya benar
-2. Memasang `asahi-platform` (pelindung speaker — **wajib**)
-3. Memasang LordOS
-
-Di Debian **Forky**, `setup.sh` memakai `fix-forky.sh`: paket LordOS menuntut
-FFmpeg 7, Forky hanya punya FFmpeg 8, jadi paket di-repack agar bisa dipasang.
-Di Debian **trixie**, ia memakai `install.sh` biasa.
-
-### Opsional — aktifkan video, kamera, mikrofon
-
-Di Forky, `lord-media` (satu-satunya biner yang memuat FFmpeg) tidak bisa dipasang
-dengan cara biasa: paket LordOS dibangun terhadap FFmpeg **7**, Forky membawa
-FFmpeg **8**. `enable-media.sh` mengembalikannya:
-
-```sh
-sh enable-media.sh                    # periksa saja, tidak mengubah apa pun
-sudo sh enable-media.sh --apply       # terapkan
-sudo sh enable-media.sh --revert      # batalkan
-```
-
-Ia memasang FFmpeg 7 dari Trixie (dipin, hanya lima paket) lalu mengambil
-`lord-media` dari paket LordOS yang **sudah terpasang** — tanpa mengunduh 31 MB
-lagi. Setelah itu restart sesi: `systemctl restart lordos.service`.
-
-**Ini mencampur dua rilis Debian.** Risikonya sudah diukur di
-[`MEDIA.md`](MEDIA.md): tiga paket toolchain turun versi, `libc6` tidak.
-Lewati langkah ini kalau Anda tidak butuh pemutaran video, kamera, atau mikrofon
-— desktop, browser, file manager dan audio biasa tetap jalan tanpa itu.
-
----
-
-## Langkah 4b — Kalau ikon kosong
-
-Sebagian ikon LordOS bukan gambar, melainkan **glyph teks** dari font sistem —
-misalnya Bluetooth (`ᛒ`), Printers (`⎙`) dan Clipboard (`⎘`). Ketiganya hanya ada
-di `fonts-noto-core`. Tanpa font itu, yang muncul adalah kotak kosong.
-
-```sh
-sh check-icons.sh              # periksa; hanya membaca
-sudo sh check-icons.sh --install   # pasang font yang kurang
-```
-
-Logout lalu login setelah memasang font supaya sesi memuatnya.
-
----
-
-## Langkah 5 — Reboot
+When it is done:
 
 ```sh
 sudo reboot
 ```
 
-Anda akan melihat **layar login LordOS**.
+You should reach the **LordOS login screen**.
 
 ---
 
-## Kalau ada masalah
+## Step 3 — After logging in
 
-### "Tidak ada /sys/class/drm/card*"
+### Icons look empty or like boxes
 
-Kernel Anda bukan kernel Asahi. Debian dipasang tanpa kernel yang benar.
+Some LordOS icons are not images: they are **text glyphs** from the system
+fonts. Bluetooth is `ᛒ`, Printers `⎙`, Clipboard `⎘` — all three live only in
+`fonts-noto-core`. Without that font they draw as empty boxes.
 
-**Perbaikan:** pastikan Anda memakai installer Bananas (Langkah 1), bukan ISO
-Debian biasa.
+```sh
+sh scripts/check-icons.sh                 # which glyph has no font; reads only
+sudo sh scripts/check-icons.sh --install   # install what is missing
+```
 
-### "Kernel tidak punya CONFIG_DRM_APPLE"
+Log out and back in afterwards: the session reads fonts at startup.
 
-Sama seperti di atas. Tanpa driver ini layar akan tetap hitam.
+### Video, camera and microphone do not work
 
-### `speakersafetyd` tidak aktif
+Expected on Debian forky. LordOS is built against **FFmpeg 7**; forky ships
+**FFmpeg 8**, so the media helper cannot load. Everything else — desktop,
+browser, files, ordinary audio — works without it.
 
-**Jangan nyalakan suara** sebelum ini beres — speaker bisa rusak.
+```sh
+sh scripts/enable-media.sh            # check only, changes nothing
+sudo sh scripts/enable-media.sh --apply
+```
+
+**This mixes Debian releases**: it installs FFmpeg 7 from trixie, pinned to
+five packages, and reuses the `lord-media` binary from the package already
+installed. The measured risk is in [`docs/MEDIA.md`](docs/MEDIA.md) — three
+toolchain packages step down a version, `libc6` does not.
+
+### The desktop moves slowly
+
+Measure before changing anything:
+
+```sh
+sh scripts/check-performance.sh
+```
+
+It reports which composition path is in use. Two things are worth knowing
+first, both measured on the reference M1:
+
+- **Display scale costs pixels.** At 100% the desktop missed 3.8% of frames; at
+  200% it missed 25.4%. On a 2560×1600 panel, 150% is a reasonable middle.
+- **Another program can be the cause.** Firefox at 77% CPU held input events for
+  20–40 ms in one measured case. Look at `top` before blaming the compositor.
+
+See [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) for what the numbers mean.
+
+---
+
+## Everyday scripts
+
+Run these from a clone, or fetch them with `curl -fsSL … | sh` (each prints what
+it will do first; the checking ones change nothing).
+
+| Script | Purpose |
+|---|---|
+| `install.sh` | The whole install, in four steps |
+| `scripts/check.sh` | Is this machine ready? Reads only |
+| `scripts/doctor.sh` | What is running, what is not, what to fix. Reads only |
+| `scripts/enable-media.sh` | Video, camera, microphone (`--apply`, `--revert`) |
+| `scripts/check-icons.sh` | Which icon glyphs have no font (`--install`) |
+| `scripts/fix-icons.sh` | Install the GTK/Qt icon themes (Adwaita, hicolor) |
+| `scripts/check-performance.sh` | Why animation is slow, with numbers |
+
+`lib/` holds what `install.sh` calls; you do not need to run it by hand.
+`tests/` holds the test suites: `sh tests/test.sh` runs them all.
+
+---
+
+## Troubleshooting
+
+### `No /sys/class/drm/card*`, or the kernel has no `CONFIG_DRM_APPLE`
+
+Debian was installed without the Asahi kernel. Reinstall using the Bananas
+installer from step 1 — a stock Debian ISO will not work on Apple Silicon.
+
+### `speakersafetyd` is not active
+
+**Do not play audio before this is fixed** — the internal speakers can be
+damaged.
 
 ```sh
 sudo apt install asahi-platform
@@ -191,89 +209,80 @@ sudo systemctl enable --now speakersafetyd
 sudo reboot
 ```
 
-### Installer LordOS menolak Debian Anda
+### The LordOS installer rejects this Debian
 
-Kalau Anda memakai `curl https://lordos.org/install.sh` langsung (bukan
-`setup.sh` dari repo ini), ia hanya menerima Debian 13. `setup.sh` di repo ini
-membawa installer yang sudah dipatch agar menerima Debian Testing (forky).
+If you ran `https://lordos.org/install.sh` directly, it accepts Debian 13 only.
+`install.sh` from this repository accepts forky and sid, which is what Apple
+Silicon runs today.
 
-### Layar hitam setelah login
+### Black screen after logging in
 
-Boot ke TTY dengan `Ctrl+Alt+F2`, login, lalu:
+Switch to a text console with `Ctrl+Alt+F2`, log in, then:
 
 ```sh
 sudo lordos --uninstall
 ```
 
-Debian Anda kembali normal. Tidak ada yang rusak.
+Debian is back to normal. Nothing is broken.
 
-### Ingin menghapus LordOS
+### Remove LordOS
 
 ```sh
 curl -fsSL https://lordos.org/install.sh | sudo sh -s -- --uninstall
 ```
 
-### Ingin menghapus Linux dan kembali ke macOS saja
+### Remove Linux and go back to macOS only
 
-Ikuti panduan resmi Asahi (hapus 3 partisi Linux), atau:
+Follow Asahi's own removal guide (delete the three Linux partitions), or:
 
 ```sh
-# dari macOS
-diskutil list              # cari partisi Linux
+# from macOS
+diskutil list                 # find the Linux partitions
 diskutil eraseVolume free free disk0sN
 ```
 
 ---
 
-## Yang perlu Anda tahu — jujur
+## What you should know — plainly
 
-1. **Debian Testing bergerak.** Ia terus diperbarui. Sesekali ada yang rusak.
-   Jangan `apt full-upgrade` tanpa alasan.
+1. **Debian Testing moves.** It updates constantly and occasionally breaks.
+   Do not run `apt full-upgrade` without a reason.
 
-2. **Tim Debian mendeprecate Debian Stable untuk Apple Silicon.** Ini di luar
-   kendali LordOS maupun repo ini. Selama kernel Asahi belum masuk kernel Debian
-   resmi, "Stable di Mac" akan terus bermasalah.
+2. **Debian deprecated Stable for Apple Silicon.** This is outside LordOS's
+   control and outside this repository's. Until the Asahi kernel is in Debian
+   proper, "Stable on a Mac" will keep having problems.
 
-3. **Touch ID dan monitor eksternal via USB-C tidak berfungsi.** Belum didukung
-   driver Linux untuk M1.
+3. **Touch ID and external displays over USB-C do not work.** No Linux driver
+   exists for M1.
 
-4. **Belum diuji di mesin ini oleh siapa pun.** Metadata paket sudah diperiksa
-   (43 dependensi, glibc, soname), tapi belum ada yang menjalankan LordOS di Mac
-   M1 dan melaporkannya.
+4. **This repository was built for one machine.** Package metadata was checked
+   (43 dependencies, glibc, sonames) and the scripts were tested, but the
+   install has not been run on a wide range of M1/M2 hardware.
 
-5. **Kernel dari image Trixie beku sejak Oktober 2026** dan tidak dapat patch
-   keamanan. Kalau ini penting bagi Anda, gunakan Testing.
+5. **The Trixie kernel image has been frozen since October 2026** and gets no
+   security patches. If that matters to you, use Testing.
 
----
-
-## Isi repo
-
-| File | Fungsi |
-|---|---|
-| `check.sh` | Pemeriksa kesiapan. Hanya membaca. |
-| `setup.sh` | Pemasang satu-perintah (paket Asahi + LordOS). |
-| `install.sh` | Installer LordOS yang sudah dipatch (forky/sid). |
-| `fix-forky.sh` | Jalur Forky: repack paket tanpa FFmpeg 7, lalu pasang. |
-| `finish-setup.sh` | Bagian sistem yang `fix-forky.sh` lewati (service, greeter, grup). |
-| `doctor.sh` | Pemeriksa menyeluruh setelah terpasang. Hanya membaca. |
-| `check-icons.sh` | Cari tahu ikon mana yang kosong dan font apa yang kurang. |
-| `enable-media.sh` | Aktifkan video, kamera, mikrofon di Forky (`--apply`/`--revert`). |
-| `fix-icons.sh` | Pasang tema ikon GTK/Qt (Adwaita, hicolor). |
-| `test.sh` | Test untuk `check.sh` dan router `setup.sh`. |
-| `MEDIA.md` | Cara mengaktifkan video, kamera, mikrofon di Forky. |
-| `installer_data_trixie.json` | Untuk yang ingin Debian 13 (Trixie). Lihat di bawah. |
+6. **GPU acceleration works**, but some optimisations are limited by design.
+   The layer path used for window drag declines fractional scales; at 150% some
+   drawing stays on the CPU. Turning animations down (Accessibility → Reduce
+   motion) is a legitimate fix, not a workaround.
 
 ---
 
-## Ingin Debian 13 (Trixie)?
+## Repository layout
 
-Image Trixie masih ada di server Bananas tapi tidak muncul di menu installer.
-Lihat [`TRIXIE.md`](TRIXIE.md) untuk caranya — dan baca dulu peringatan
-keamanannya.
+```
+install.sh          the entry point: preflight → install → verify
+scripts/            what you run after installing (all read-only unless said)
+lib/                internals install.sh calls; not for typing by hand
+docs/               MEDIA.md, TRIXIE.md, PERFORMANCE.md
+tests/              the test suites; `sh tests/test.sh` runs them all
+```
 
 ---
 
-## Lisensi
+## License
 
-Skrip di repo ini: MIT.
-LordOS: MIT (© iPERFEX). Debian: lisensi masing-masing.
+The scripts here: MIT. LordOS: MIT (© iPERFEX). Debian: its own licenses.
+Asahi Linux is a separate project with its own contributors; this repository is
+**not** endorsed by or affiliated with it.

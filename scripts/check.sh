@@ -4,7 +4,7 @@
 # Jalankan SETELAH Debian (Bananas) terpasang dan setelah `sudo apt install asahi-platform`.
 # Skrip ini HANYA MEMBACA. Tidak memasang, tidak mengubah, tidak menghapus apa pun.
 #
-#   sh check.sh
+#   sh scripts/check.sh
 #
 # Keluar dengan 0 kalau semua syarat wajib terpenuhi, 1 kalau ada yang kurang.
 
@@ -204,7 +204,7 @@ hdr "Hasil"
 
 if [ "$FAIL" -eq 0 ] && [ "$WARN" -eq 0 ]; then
     printf '%s%sAMAN.%s Semua syarat terpenuhi. Lanjutkan dengan:\n\n' "$GRN" "$BLD" "$OFF"
-    printf '    sh install.sh\n\n'
+    printf '    sh install.sh          # the wizard\n\n'
     exit 0
 fi
 

@@ -9,7 +9,7 @@
 # yang dipasang lewat Bananas tidak membawa adwaita-icon-theme, dan paket LordOS
 # tidak merekomendasikannya. Akibatnya aplikasi tidak punya ikon untuk digambar.
 #
-#   sudo sh fix-icons.sh
+#   sudo sh scripts/fix-icons.sh
 
 set -u
 
@@ -50,7 +50,7 @@ if [ "$have_adwaita" -eq 1 ] && [ "$have_hicolor" -eq 1 ]; then
     say ""
     say "Tema ikon sudah lengkap. Kalau ikon masih kosong, masalahnya di tempat lain:"
     say ""
-    say "    sh doctor.sh      # periksa menyeluruh"
+    say "    sh scripts/doctor.sh      # periksa menyeluruh"
     say ""
     exit 0
 fi
@@ -94,5 +94,5 @@ say "      lordos-logout        # atau: systemctl restart lordos.service"
 say ""
 say "  Kalau ikon masih kosong setelah itu, jalankan:"
 say ""
-say "      sh doctor.sh"
+say "      sh scripts/doctor.sh"
 say ""

@@ -3,7 +3,7 @@
 #
 # Hanya MEMBACA: tidak memasang, tidak mengubah, tidak menghapus apa pun.
 #
-#   sh check-performance.sh
+#   sh scripts/check-performance.sh
 #
 # Yang menentukan bukan "ada GPU" tetapi jalur mana yang dipakai kompositor:
 # LordOS memakai GPU kalau renderer GL-nya bukan software, dan jatuh ke jalur

@@ -17,7 +17,7 @@
 # Yang HILANG setelah ini: pemutaran video, kamera, mikrofon lewat lord-media.
 # Desktop, aplikasi, terminal, browser, dan file manager TETAP JALAN.
 #
-# Kalau Anda ingin fitur media juga, jalankan `sh fix-forky.sh --with-media`
+# Kalau Anda ingin fitur media juga, jalankan `sh scripts/enable-media.sh --apply`
 # yang memasang FFmpeg 7 dari Trixie (mencampur rilis — lihat peringatannya).
 
 set -u
@@ -234,7 +234,7 @@ if [ ! -f /usr/lib/lordos/bin/lord-media ]; then
     say ""
     say "  Catatan: fitur media (video, kamera, mikrofon) tidak aktif di mesin ini"
     say "  karena FFmpeg 7 tidak tersedia di Debian Forky. Desktop tetap berjalan."
-    say "  Untuk mengaktifkannya: sh fix-forky.sh --with-media"
+    say "  Untuk mengaktifkannya: sh scripts/enable-media.sh --apply"
 fi
 
 printf '\nReboot untuk masuk ke LordOS:\n\n    sudo reboot\n\n'
